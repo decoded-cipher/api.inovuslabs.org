@@ -33,6 +33,6 @@ const RoleSchema = new mongoose.Schema({
         required: false,
         default: Date.now
     }
-});
+}, { collection: 'roles' });
 
 module.exports = mongoose.model('Role', RoleSchema);

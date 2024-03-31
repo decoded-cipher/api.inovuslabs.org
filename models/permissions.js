@@ -29,6 +29,6 @@ const PermissionSchema = new mongoose.Schema({
         default: Date.now
     }
 
-});
+}, { collection: 'permissions' });
 
 module.exports = mongoose.model('Permission', PermissionSchema);
