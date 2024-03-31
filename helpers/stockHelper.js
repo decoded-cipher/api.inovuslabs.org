@@ -1,6 +1,6 @@
 
-const StockLog = require('../models/stock_logs');
-const UserLog = require('../models/user_logs');
+const StockLog = require('../models/stock/stock_logs');
+const UserLog = require('../models/stock/user_logs');
 
 
 module.exports = {
@@ -94,7 +94,10 @@ module.exports = {
                                         // });
                                         resolve({
                                             status: 200,
-                                            message: 'Stock log approved successfully',
+                                            message: [
+                                                'Stock log approved successfully',
+                                                'User log deleted successfully'
+                                            ]
                                             // data: data
                                         });
                                     })
@@ -106,7 +109,10 @@ module.exports = {
                                         // });
                                         reject({
                                             status: 400,
-                                            message: 'Error deleting user log',
+                                            message: [
+                                                'Stock log approved successfully',
+                                                'Error deleting user log'
+                                            ],
                                             error: err
                                         });
                                     });
@@ -123,7 +129,10 @@ module.exports = {
                                         // });
                                         resolve({
                                             status: 200,
-                                            message: 'Stock log approved successfully',
+                                            message: [
+                                                'Stock log approved successfully',
+                                                'User log updated successfully'
+                                            ]
                                             // data: data
                                         });
                                     })
@@ -135,7 +144,10 @@ module.exports = {
                                         // });
                                         reject({
                                             status: 400,
-                                            message: 'Error approving stock log',
+                                            message: [
+                                                'Stock log approved successfully',
+                                                'Error updating user log'
+                                            ],
                                             error: err
                                         });
                                     });

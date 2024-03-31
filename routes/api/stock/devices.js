@@ -2,10 +2,11 @@
 const express = require('express');
 const router = express.Router();
 
-const Device = require('../../../models/devices');
-const DeviceLog = require('../../../models/device_logs');
+const Device = require('../../../models/stock/devices');
 const verifyToken = require('../../../middleware/authentication');
 const checkPermission = require('../../../middleware/authorization');
+
+const { deviceLogEntry } = require('../../../helpers/deviceHelper');
 
 
 
@@ -132,125 +133,21 @@ router.get('/:id', async (req, res) => {
 
 router.post('/', verifyToken, checkPermission(['org.device.write', 'own.device_log.write'], 'all'), async (req, res) => {
 
-    let {  device_id, name, type, qty, mode, description, image, price, date_of_purchase, vendor, remarks } = req.body;
-
-    let update = {};
-    mode === 'stock_remove' ? update = { $inc: { qty_available: -qty } } : update = { $inc: { qty_purchased: qty, qty_available: qty } };
-
-    
-    if (device_id) {
-
-        await Device.findOneAndUpdate({ device_id: device_id }, update, { new: true })
-            .then(device => {
-                let newDeviceLog = new DeviceLog({
-                    
-                    device_id: device.device_id,
-                    mode: mode,
-                    qty: qty,
-                    author_id: req.user.user_id,
-
-                    price: price,
-                    vendor: vendor,
-                    date_of_purchase: date_of_purchase,
-                    
-                    remarks: remarks
-                });
-
-                newDeviceLog.save()
-                    .then(deviceLog => {
-                        res.status(201).json({
-                            status: 201,
-                            message: [
-                                'Device updated successfully',
-                                'Device log created successfully'
-                            ]
-                            // data: device
-                        });
-                    })
-                    .catch(err => {
-                        res.status(400).json({
-                            status: 400,
-                            message: [
-                                'Device updated successfully',
-                                'Error creating device log'
-                            ],
-                            error: err
-                        });
-                    });
-            })
-            .catch(err => {
-                res.status(400).json({
-                    status: 400,
-                    message: [
-                        'Error updating device',
-                        'Error creating device log'
-                    ],
-                    error: err
-                });
+    await deviceLogEntry(req.body, req.user.user_id)
+        .then(data => {
+            res.status(data.status).json({
+                status: data.status,
+                message: data.message,
+                // data: data
             });
-
-    } else {
-
-        if (mode === 'stock_remove') {
-            res.status(400).json({
-                status: 400,
-                message: 'Device ID is required for stock removal'
+        })
+        .catch(err => {
+            res.status(err.status).json({
+                status: err.status,
+                message: err.message,
+                error: err.error
             });
-            return;
-        }
-
-
-        let newDevice = new Device({
-            name: name,
-            type: type,
-            qty_available: qty,
-            qty_purchased: qty,
-            description: description,
-            image: image
         });
-
-        await newDevice.save()
-            .then(device => {
-                let newDeviceLog = new DeviceLog({
-                    device_id: device.device_id,
-                    qty: qty,
-                    author_id: req.user.user_id,
-                    price: price,
-                    vendor: vendor,
-                    date_of_purchase: date_of_purchase,
-                    remarks: remarks
-                });
-
-                newDeviceLog.save()
-                    .then(deviceLog => {
-                        res.status(201).json({
-                            status: 201,
-                            message: [
-                                'Device created successfully',
-                                'Device log created successfully'
-                            ]
-                            // data: device
-                        });
-                    })
-                    .catch(err => {
-                        res.status(400).json({
-                            status: 400,
-                            message: [
-                                'Device created successfully',
-                                'Error creating device log'
-                            ],
-                            error: err
-                        });
-                    });
-            })
-            .catch(err => {
-                res.status(400).json({
-                    status: 400,
-                    message: 'Error creating device',
-                    error: err
-                });
-            });
-    }
 
 });
 

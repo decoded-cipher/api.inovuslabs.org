@@ -2,11 +2,13 @@
 const express = require('express');
 const router = express.Router();
 
-const Device = require('../../../models/devices');
-const DeviceLog = require('../../../models/device_logs');
+const Device = require('../../../models/stock/devices');
+const DeviceLog = require('../../../models/stock/device_logs');
 
 const verifyToken = require('../../../middleware/authentication');
 const checkPermission = require('../../../middleware/authorization');
+
+const { deviceLogDelete } = require('../../../helpers/deviceHelper');
 
 
 
@@ -132,51 +134,31 @@ router.patch('/:devicelog_id', verifyToken, checkPermission(['own.device_log.wri
 
     let { price, vendor, date_of_purchase, remarks } = req.body;
 
-    // Check if device log exists and belongs to user
-    await DeviceLog.findOne({ devicelog_id: req.params.devicelog_id })
-        .then(async data => {
-            if ((data.author_id == req.user.user_id) || checkPermission(['org.device_log.write'])) {
-                
-                await DeviceLog.findOneAndUpdate({ devicelog_id: req.params.devicelog_id }, {
+    await DeviceLog.findOneAndUpdate({ devicelog_id: req.params.devicelog_id }, {
 
-                    price: price,
-                    vendor: vendor,
-                    date_of_purchase: date_of_purchase,
-                    remarks: remarks,
-                    updated_at: Date.now()
+        price: price,
+        vendor: vendor,
+        date_of_purchase: date_of_purchase,
+        remarks: remarks,
+        updated_at: Date.now()
 
-                }, { new: true })
-                    .then(data => {
-                        res.status(200).json({
-                            status: 200,
-                            message: 'Device log updated successfully',
-                            data: data
-                        });
-                    })
-                    .catch(err => {
-                        res.status(400).json({
-                            status: 400,
-                            message: 'Error updating device log',
-                            error: err
-                        });
-                    });
-
-            } else {
-                return res.status(401).json({
-                    status: 401,
-                    message: 'This device log does not belong to you. You do not have permission to update it'
-                });
-            }
+    }, { new: true })
+        .then(data => {
+            res.status(200).json({
+                status: 200,
+                message: 'Device log updated successfully',
+                data: data
+            });
         })
         .catch(err => {
-            return res.status(400).json({
+            res.status(400).json({
                 status: 400,
-                message: 'Error checking device log ownership',
+                message: 'Error updating device log',
                 error: err
             });
         });
 
-    
+
 
 });
 
@@ -194,79 +176,21 @@ router.patch('/:devicelog_id', verifyToken, checkPermission(['own.device_log.wri
  * @example /api/v1/stock/device_log/60f5a4d2b4e4c20015f6d1c3
  **/
 
-router.delete('/:devicelog_id', checkPermission(['org.device.destroy', 'org.device_log.destroy'], 'any'), async (req, res) => {
+router.delete('/:devicelog_id', verifyToken, checkPermission(['org.device.destroy', 'org.device_log.destroy', 'own.device_log.destroy'], 'any'), async (req, res) => {
 
-    await DeviceLog.findOneAndDelete({ devicelog_id: req.params.devicelog_id })
-        .then(async data => {
-
-            let update = {};
-            if (data.mode === 'stock_insert') {
-                update = { $inc: { qty_available: -data.qty, qty_purchased: -data.qty } };
-            } else if (data.mode === 'stock_remove') {
-                update = { $inc: { qty_available: data.qty } };
-            }
-
-            await Device.findOneAndUpdate({ device_id: data.device_id }, update, { new: true })
-                .then(device => {
-
-                    if (device.qty_available <= 0) {
-
-                        Device.findOneAndDelete({ device_id: data.device_id })
-                            .then(device => {
-                                res.status(200).json({
-                                    status: 200,
-                                    message: [
-                                        'Device log deleted successfully',
-                                        'Device updated successfully',
-                                        'Device deleted successfully'
-                                    ]
-                                    // data: data
-                                });
-                            })
-                            .catch(err => {
-                                res.status(400).json({
-                                    status: 400,
-                                    message: [
-                                        'Device log deleted successfully',
-                                        'Device updated successfully',
-                                        'Error deleting device'
-                                    ],
-                                    error: err
-                                });
-                            });
-
-                    } else {
-                        res.status(200).json({
-                            status: 200,
-                            message: [
-                                'Device log deleted successfully',
-                                'Device updated successfully'
-                            ]
-                            // data: data
-                        });
-                    }
-
-                })
-                .catch(err => {
-                    res.status(400).json({
-                        status: 400,
-                        message: [
-                            'Device log deleted successfully',
-                            'Error updating device'
-                        ],
-                        error: err
-                    });
-                });
-
+    await deviceLogDelete(req.params.devicelog_id)
+        .then(data => {
+            res.status(data.status).json({
+                status: data.status,
+                message: data.message,
+                // data: data
+            });
         })
         .catch(err => {
-            res.status(400).json({
-                status: 400,
-                message: [
-                    'Error deleting device log',
-                    'Error updating device'
-                ],
-                error: err
+            res.status(err.status).json({
+                status: err.status,
+                message: err.message,
+                error: err.error
             });
         });
 
