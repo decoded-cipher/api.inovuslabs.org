@@ -87,7 +87,7 @@ router.get('/', verifyToken, checkPermission(['org.permission.read']), async (re
 
 router.get('/:id', verifyToken, checkPermission(['org.permission.read']), async (req, res) => {
     
-    await Permission.findById(req.params.id)
+    await Permission.findOneAndUpdate({ permission_id: req.params.id })
         .then(permission => {
             res.status(200).json({
                 status: 200,
@@ -194,7 +194,7 @@ router.patch('/:id', verifyToken, checkPermission(['org.permission.write']), asy
 
 router.delete('/:id', verifyToken, checkPermission(['org.permission.destroy']), async (req, res) => {
     
-    await Permission.findByIdAndDelete(req.params.id)
+    await Permission.findOneAndDelete({ permission_id: req.params.id })
         .then(permission => {
             res.status(200).json({
                 status: 200,
