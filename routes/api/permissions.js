@@ -23,7 +23,7 @@ const checkPermission = require('../../middleware/authorization');
  * @todo    Add filter by category
 **/
 
-router.get('/', async (req, res) => {
+router.get('/', verifyToken, checkPermission(['org.permission.read']), async (req, res) => {
 
     let page = parseInt(req.query.page) || 1;
     let limit = parseInt(req.query.limit) || 10;
@@ -85,8 +85,9 @@ router.get('/', async (req, res) => {
  * @example /api/v1/permissions/5e0e2b8f3e5b9a2f1c6c4b3d
 **/
 
-router.get('/:id', verifyToken, checkPermission(['org.permission.read']), (req, res) => {
-    Permission.findById(req.params.id)
+router.get('/:id', verifyToken, checkPermission(['org.permission.read']), async (req, res) => {
+    
+    await Permission.findById(req.params.id)
         .then(permission => {
             res.status(200).json({
                 status: 200,
@@ -117,13 +118,14 @@ router.get('/:id', verifyToken, checkPermission(['org.permission.read']), (req, 
  * @example /api/v1/permissions
 **/
 
-router.post('/', verifyToken, checkPermission(['org.permission.write']), (req, res) => {
+router.post('/', verifyToken, checkPermission(['org.permission.write']), async (req, res) => {
+    
     let permission = new Permission({
         name: req.body.name,
         description: req.body.description
     });
 
-    permission.save()
+    await permission.save()
         .then(permission => {
             res.status(201).json({
                 status: 201,
@@ -154,8 +156,9 @@ router.post('/', verifyToken, checkPermission(['org.permission.write']), (req, r
  * @example /api/v1/permissions/5e0e2b8f3e5b9a2f1c6c4b3d
 **/
 
-router.patch('/:id', verifyToken, checkPermission(['org.permission.write']), (req, res) => {
-    Permission.findByIdAndUpdate(req.params.id, {
+router.patch('/:id', verifyToken, checkPermission(['org.permission.write']), async (req, res) => {
+    
+    await Permission.findByIdAndUpdate(req.params.id, {
         name: req.body.name,
         description: req.body.description
     }, { new: true })
@@ -189,8 +192,9 @@ router.patch('/:id', verifyToken, checkPermission(['org.permission.write']), (re
  * @example /api/v1/permissions/5e0e2b8f3e5b9a2f1c6c4b3d
 **/
 
-router.delete('/:id', verifyToken, checkPermission(['org.permission.destroy']), (req, res) => {
-    Permission.findByIdAndDelete(req.params.id)
+router.delete('/:id', verifyToken, checkPermission(['org.permission.destroy']), async (req, res) => {
+    
+    await Permission.findByIdAndDelete(req.params.id)
         .then(permission => {
             res.status(200).json({
                 status: 200,
