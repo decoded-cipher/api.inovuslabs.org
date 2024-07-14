@@ -56,6 +56,6 @@ const StockLogSchema = new mongoose.Schema({
         required: true,
         default: Date.now
     }
-})
+}, { collection: 'stock_logs' })
 
 module.exports = mongoose.model('StockLog', StockLogSchema);

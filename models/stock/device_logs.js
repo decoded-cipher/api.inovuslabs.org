@@ -2,48 +2,43 @@
 const mongoose = require('mongoose');
 const { nanoid } = require('nanoid');
 
-const DeviceSchema = new mongoose.Schema({
-    device_id: {
+const DeviceLogSchema = new mongoose.Schema({
+    devicelog_id: {
         type: String,
         required: true,
         unique: true,
         default: () => nanoid()
     },
-    name: {
+    device_id: {
         type: String,
         required: true
     },
-    type: {
+    mode: {
         type: String,
-        required: true
+        required: true,
+        default: 'stock_insert',
+        enum: ['stock_insert', 'stock_remove']
     },
-    qty_available: {
+    qty: {
         type: Number,
         required: true,
-    },
-    qty_purchased: {
-        type: Number,
-        required: true
     },
     price: {
         type: Number,
         required: false
     },
-    description: {
-        type: String,
-        required: false
-    },
-    image: {
+    vendor: {
         type: String,
         required: false
     },
     date_of_purchase: {
         type: Date,
-        required: false
+        required: true,
+        default: Date.now
     },
-    vendor: {
+    author_id: {
         type: String,
-        required: false
+        required: true
     },
     remarks: {
         type: String,
@@ -59,6 +54,6 @@ const DeviceSchema = new mongoose.Schema({
         required: true,
         default: Date.now
     }
-})
+}, { collection: 'device_logs' })
 
-module.exports = mongoose.model('Device', DeviceSchema);
+module.exports = mongoose.model('DeviceLog', DeviceLogSchema);

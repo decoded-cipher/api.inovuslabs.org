@@ -37,6 +37,6 @@ const ResourceSchema = new mongoose.Schema({
         required: false,
         default: Date.now
     }
-});
+}, { collection: 'resources' });
 
 module.exports = mongoose.model('Resource', ResourceSchema);

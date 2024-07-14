@@ -2,8 +2,8 @@
 const mongoose = require('mongoose');
 const { nanoid } = require('nanoid');
 
-const RoleSchema = new mongoose.Schema({
-    role_id: {
+const DeviceSchema = new mongoose.Schema({
+    device_id: {
         type: String,
         required: true,
         unique: true,
@@ -11,28 +11,38 @@ const RoleSchema = new mongoose.Schema({
     },
     name: {
         type: String,
+        required: true
+    },
+    type: {
+        type: String,
+        required: true
+    },
+    qty_available: {
+        type: Number,
         required: true,
-        unique: true
+    },
+    qty_purchased: {
+        type: Number,
+        required: true
     },
     description: {
         type: String,
         required: false
     },
-    permissions: {
-        type: Array,
-        required: false,
-        default: []
+    image: {
+        type: String,
+        required: false
     },
     created_at: {
         type: Date,
-        required: false,
+        required: true,
         default: Date.now
     },
     updated_at: {
         type: Date,
-        required: false,
+        required: true,
         default: Date.now
     }
-}, { collection: 'roles' });
+}, { collection: 'devices' })
 
-module.exports = mongoose.model('Role', RoleSchema);
+module.exports = mongoose.model('Device', DeviceSchema);

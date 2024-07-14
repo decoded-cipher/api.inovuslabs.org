@@ -2,9 +2,11 @@
 const express = require('express');
 const router = express.Router();
 
-const Device = require('../../../models/devices');
+const Device = require('../../../models/stock/devices');
 const verifyToken = require('../../../middleware/authentication');
 const checkPermission = require('../../../middleware/authorization');
+
+const { deviceLogEntry } = require('../../../helpers/deviceHelper');
 
 
 
@@ -74,42 +76,78 @@ router.get('/', async (req, res) => {
 
 
 /**
+ * @route   GET /api/v1/stock/device/:id
+ * @desc    Get a device by ID
+ * @access  Public
+ * @params  id
+ * @return  message, data
+ * @error   400, { error }
+ * @status  200, 400
+ * 
+*  @example /api/v1/stock/devices/5f1d3f5f3c5e2f1b3c5e2f1b
+**/
+
+router.get('/:id', async (req, res) => {
+    
+    await Device.aggregate([
+        { $match: { device_id: req.params.id } },
+        {
+            $lookup: {
+                from: 'device_logs',
+                localField: 'device_id',
+                foreignField: 'device_id',
+                as: 'device_logs'
+            }
+        }
+    ])
+        .then(device => {
+            res.status(200).json({
+                status: 200,
+                message: 'Device retrieved successfully',
+                data: device
+            });
+        })
+        .catch(err => {
+            res.status(400).json({
+                status: 400,
+                message: 'Error retrieving device',
+                error: err
+            });
+        });
+
+});
+
+
+
+/**
  * @route   POST /api/v1/stock/device
  * @desc    Create a new device
  * @access  Private
- * @params  name, type, qty_purchased, price, description, image, date_of_purchase, vendor, remarks
- * @return  message, data
+ * @params  name, type, qty, mode, description, image, price, date_of_purchase, vendor, remarks
+ * @return  status, message, data
  * @error   400, { error }
  * @status  201, 400
  * 
  * @example /api/v1/stock/devices
 **/
 
-router.post('/', verifyToken, checkPermission(['org.device.write']), async (req, res) => {
+router.post('/', verifyToken, checkPermission(['org.device.write', 'own.device_log.write'], 'all'), async (req, res) => {
 
-    let { name, type, qty_available, qty_purchased } = req.body;
-
-    let newDevice = new Device({
-        name: name,
-        type: type,
-        qty_available: qty_available,
-        qty_purchased: qty_purchased
-    });
-
-    await newDevice.save()
+    await deviceLogEntry(req.body, req.user.user_id)
+        .then(data => {
+            res.status(data.status).json({
+                status: data.status,
+                message: data.message,
+                // data: data
+            });
+        })
         .catch(err => {
-            res.status(400).json({
-                status: 400,
-                message: 'Error inserting device',
-                error: err
+            res.status(err.status).json({
+                status: err.status,
+                message: err.message,
+                error: err.error
             });
         });
-
-    res.status(201).json({
-        status: 201,
-        message: 'Device inserted successfully',
-        // data: device
-    });
 
 });
 
@@ -119,7 +157,7 @@ router.post('/', verifyToken, checkPermission(['org.device.write']), async (req,
  * @route   PATCH /api/v1/stock/device/:id
  * @desc    Update a device
  * @access  Private
- * @params  name, type, qty_purchased, price, description, image, date_of_purchase, vendor, remarks
+ * @params  id, name, type, description, image
  * @return  message, data
  * @error   400, { error }
  * @status  200, 400
@@ -129,13 +167,13 @@ router.post('/', verifyToken, checkPermission(['org.device.write']), async (req,
 
 router.patch('/:id', verifyToken, checkPermission(['org.device.write']), async (req, res) => {
 
-    let { name, type, qty_available, qty_purchased } = req.body;
+    let { name, type, description, image } = req.body;
 
     await Device.findOneAndUpdate({ device_id: req.params.id }, {
         name: name,
         type: type,
-        qty_available: qty_available,
-        qty_purchased: qty_purchased,
+        description: description,
+        image: image,
         updated_at: Date.now()
     })
         .then(device => {
@@ -169,7 +207,7 @@ router.patch('/:id', verifyToken, checkPermission(['org.device.write']), async (
  * @example /api/v1/stock/devices/5f1d3f5f3c5e2f1b3c5e2f1b
 **/
 
-router.delete('/:id', verifyToken, checkPermission(['org.device.destroy']), async (req, res) => {
+router.delete('/:id', checkPermission(['org.device.destroy', 'org.device_log.destroy'], 'all'), async (req, res) => {
 
     await Device.findOneAndDelete({ device_id: req.params.id })
         .then(device => {

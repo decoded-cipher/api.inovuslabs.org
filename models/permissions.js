@@ -14,6 +14,15 @@ const PermissionSchema = new mongoose.Schema({
         required: true,
         unique: true
     },
+    category: {
+        type: String,
+        required: false
+    },
+    scope: {
+        type: String,
+        required: false,
+        enum: ['org', 'own']
+    },
     description: {
         type: String,
         required: false
@@ -29,6 +38,6 @@ const PermissionSchema = new mongoose.Schema({
         default: Date.now
     }
 
-});
+}, { collection: 'permissions' });
 
 module.exports = mongoose.model('Permission', PermissionSchema);

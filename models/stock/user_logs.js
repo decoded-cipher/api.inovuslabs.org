@@ -61,6 +61,6 @@ const UserLogSchema = new mongoose.Schema({
         required: true,
         default: Date.now
     }
-})
+}, { collection: 'user_logs' })
 
 module.exports = mongoose.model('UserLog', UserLogSchema);

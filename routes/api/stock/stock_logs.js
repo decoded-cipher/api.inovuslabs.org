@@ -2,7 +2,7 @@
 const express = require('express');
 const router = express.Router();
 
-const StockLog = require('../../../models/stock_logs');
+const StockLog = require('../../../models/stock/stock_logs');
 const verifyToken = require('../../../middleware/authentication');
 const checkPermission = require('../../../middleware/authorization');
 
